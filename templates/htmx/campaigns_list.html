@@ -1,0 +1,188 @@
+{% if campaigns %}
+<div class="space-y-6">
+  {% for c in campaigns %}
+  {% set total = c.sent if c.sent > 0 else 1 %}
+  {% set total_audience = c.audienceSize if c.audienceSize > 0 else 1 %}
+  {% set delivered_pct = ((c.delivered / total) * 100) | round | int %}
+  {% set opened_pct = ((c.opened / (c.delivered if c.delivered > 0 else 1)) * 100) | round | int %}
+  {% set clicked_pct = ((c.clicked / (c.opened if c.opened > 0 else 1)) * 100) | round | int %}
+  {% set converted_pct = ((c.conversions / (c.clicked if c.clicked > 0 else 1)) * 100) | round | int %}
+
+  <div class="glass-card rounded-2xl overflow-hidden group">
+    <!-- Card header -->
+    <div class="p-5 border-b border-slate-800/80 bg-slate-900/30">
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border
+              {% if c.status == 'active' %}bg-emerald-950/40 text-emerald-400 border-emerald-800/40
+              {% elif c.status == 'completed' %}bg-slate-900 border border-slate-800 text-slate-400
+              {% else %}bg-purple-950/40 text-purple-400 border-purple-800/40{% endif %}">
+              {% if c.status == 'active' %}
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+              {% endif %}
+              {{ c.status | capitalize }}
+            </span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-950/40 text-purple-300 border border-purple-850">
+              {{ c.channel }}
+            </span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800">
+              {{ c.audienceTag }} segment
+            </span>
+            <span class="text-xs text-slate-500 font-mono">{{ c.createdAt[:10] if c.createdAt else '' }}</span>
+          </div>
+          <h3 class="font-extrabold text-white text-base leading-snug">{{ c.goal }}</h3>
+          <p class="text-xs text-slate-400">Target Segment Name: <span class="font-semibold text-slate-300">{{ c.segmentName }}</span></p>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-2xl font-extrabold text-white tabular-nums">{{ "{:,}".format(c.audienceSize) }}</div>
+          <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Total Recipients</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main metrics grid -->
+    <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Delivery Funnel -->
+      <div class="lg:col-span-2 space-y-4">
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Campaign Funnel Analytics</p>
+
+        <!-- Funnel visual bar stack -->
+        <div class="flex h-3 w-full bg-slate-900/60 rounded-full border border-slate-800/80 overflow-hidden mb-5">
+          <div class="bg-blue-600 h-full transition-all duration-700" style="width: {{ delivered_pct }}%" title="Delivered"></div>
+          <div class="bg-indigo-500 h-full transition-all duration-700" style="width: {{ (c.opened / total * 100) | round | int }}%" title="Opened"></div>
+          <div class="bg-purple-600 h-full transition-all duration-700" style="width: {{ (c.clicked / total * 100) | round | int }}%" title="Clicked"></div>
+          <div class="bg-emerald-500 h-full transition-all duration-700" style="width: {{ (c.conversions / total * 100) | round | int }}%" title="Converted"></div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 text-center bg-slate-900/20 border border-slate-800/50 rounded-xl p-3 mb-3">
+          <div>
+            <div class="text-[10px] font-bold text-blue-400 uppercase">Delivered</div>
+            <div class="text-sm font-extrabold text-white mt-0.5">{{ "{:,}".format(c.delivered) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">{{ delivered_pct }}% of Sent</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-indigo-400 uppercase">Opened</div>
+            <div class="text-sm font-extrabold text-white mt-0.5">{{ "{:,}".format(c.opened) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">{{ opened_pct }}% of Del.</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-purple-400 uppercase">Clicked</div>
+            <div class="text-sm font-extrabold text-white mt-0.5">{{ "{:,}".format(c.clicked) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">{{ clicked_pct }}% of Open</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-emerald-400 uppercase">Converted</div>
+            <div class="text-sm font-extrabold text-white mt-0.5">{{ "{:,}".format(c.conversions) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">{{ converted_pct }}% of Click</div>
+          </div>
+        </div>
+
+        <!-- Funnel bars list -->
+        <div class="space-y-3">
+          {% for label, value, denom, pct, color in [
+            ('Message Delivery', c.delivered, c.sent, delivered_pct, 'from-blue-600 to-blue-500'),
+            ('Audience Opens', c.opened, c.delivered if c.delivered > 0 else 1, opened_pct, 'from-indigo-600 to-indigo-500'),
+            ('Link Clicks', c.clicked, c.opened if c.opened > 0 else 1, clicked_pct, 'from-purple-600 to-purple-500'),
+            ('Final Conversions', c.conversions, c.clicked if c.clicked > 0 else 1, converted_pct, 'from-emerald-600 to-emerald-500'),
+          ] %}
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-300">{{ label }}</span>
+              <span class="text-slate-500 tabular-nums">
+                <span class="font-bold text-slate-200">{{ "{:,}".format(value) }}</span> / {{ "{:,}".format(denom) }}
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1 h-2 bg-slate-900 border border-slate-800 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r {{ color }} h-full rounded-full transition-all duration-700" style="width: {{ pct }}%"></div>
+              </div>
+              <span class="text-xs font-bold text-slate-400 w-8 text-right tabular-nums">{{ pct }}%</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Failed metrics -->
+        {% if c.failed > 0 or c.permanentlyFailed > 0 %}
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/40">
+          {% if c.failed > 0 %}
+          <span class="flex items-center gap-1.5 text-amber-400 bg-amber-950/20 border border-amber-900/30 rounded-lg px-2.5 py-1 text-xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+            <span class="font-semibold">{{ c.failed }} retried attempts</span>
+          </span>
+          {% endif %}
+          {% if c.permanentlyFailed > 0 %}
+          <span class="flex items-center gap-1.5 text-red-400 bg-red-950/20 border border-red-900/30 rounded-lg px-2.5 py-1 text-xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            <span class="font-semibold">{{ c.permanentlyFailed }} permanent failures</span>
+          </span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Message & Offer -->
+      <div class="lg:border-l lg:border-slate-800/80 lg:pl-6 space-y-4">
+        <div>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Dispatched Outreach message</p>
+          <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 italic leading-relaxed">
+            "{{ c.message }}"
+          </div>
+        </div>
+        {% if c.offer %}
+        <div>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Campaign Offer Incentives</p>
+          <div class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/30 border border-emerald-900/40 rounded-xl px-3 py-2.5">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+            </svg>
+            <span class="font-semibold">{{ c.offer }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Attribution & Conversion Footer -->
+    <div class="border-t border-slate-800/80 px-5 py-4 bg-gradient-to-r from-purple-950/10 to-emerald-950/10">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+        <div>
+          <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Conversions</div>
+          <div class="text-xl font-extrabold text-purple-400 mt-1 tabular-nums">{{ c.conversions }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Conversion Rate</div>
+          <div class="text-xl font-extrabold text-indigo-400 mt-1 tabular-nums">{{ c.conversionRate }}%</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Attributed Revenue</div>
+          <div class="text-xl font-extrabold text-emerald-400 mt-1 tabular-nums">
+            {% if c.attributedRevenue > 0 %}₹{{ "{:,.0f}".format(c.attributedRevenue) }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Total Messages Sent</div>
+          <div class="text-xl font-extrabold text-slate-300 mt-1 tabular-nums">{{ "{:,}".format(c.sent) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="glass-card rounded-2xl p-16 flex flex-col items-center text-center">
+  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 mb-4">
+    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535" />
+    </svg>
+  </div>
+  <h3 class="text-lg font-bold text-slate-300">No campaigns launched yet</h3>
+  <p class="text-slate-500 text-sm mt-1.5 max-w-xs">Use the AI Strategist to generate and launch your first engagement strategy.</p>
+  <a href="/strategist" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand-red px-5 py-2.5 text-sm font-semibold text-white shadow-md">
+    Open AI Strategist
+  </a>
+</div>
+{% endif %}

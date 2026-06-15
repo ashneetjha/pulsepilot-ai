@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}System Architecture — XPilot{% endblock %}
+
+{% block content %}
+<div class="p-8 max-w-5xl mx-auto w-full space-y-8">
+
+  <!-- Header -->
+  <div>
+    <div class="flex items-center gap-3 mb-1">
+      <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-2.25z" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">System Architecture</h1>
+    </div>
+    <p class="text-slate-500 text-sm mt-1">Technical overview of XPilot's AI-native CRM engine and data flow.</p>
+  </div>
+
+  <!-- Row 1: Service Architecture Flow | Technology Stack -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- Service Architecture Flow -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-800 mb-5">Service Architecture Flow</h2>
+      <div class="space-y-2">
+        {% set services = [
+          ('CRM Service',         'Flask + SQLAlchemy — customer data, tagging, orders',                    'bg-blue-100 text-blue-700 border-blue-200',    'bg-blue-50'),
+          ('Campaign Engine',     'Strategy builder — AI-driven audience selection & messaging',             'bg-violet-100 text-violet-700 border-violet-200','bg-violet-50'),
+          ('Channel Service',     'Multi-channel dispatcher — WhatsApp, Email, SMS, Push',                  'bg-indigo-100 text-indigo-700 border-indigo-200','bg-indigo-50'),
+          ('Receipt Callback API','/api/receipts — event ingestion for delivery, open, click',              'bg-amber-100 text-amber-700 border-amber-200',  'bg-amber-50'),
+          ('Communication Log',   'Per-message status tracker — queued → sent → delivered',                 'bg-orange-100 text-orange-700 border-orange-200','bg-orange-50'),
+          ('Analytics Engine',    'Aggregation layer — open rates, click rates, segment metrics',           'bg-emerald-100 text-emerald-700 border-emerald-200','bg-emerald-50'),
+          ('AI Insights (Gemini)','Gemini 2.5 Flash — insights, strategy, customer summaries',              'bg-rose-100 text-rose-700 border-rose-200',    'bg-rose-50'),
+        ] %}
+        {% for name, desc, badge_class, row_class in services %}
+        <div class="flex items-start gap-3">
+          <div class="flex flex-col items-center mt-1">
+            <div class="h-2.5 w-2.5 rounded-full border-2 {% if loop.first %}border-blue-500 bg-blue-500{% else %}border-slate-300 bg-white{% endif %}"></div>
+            {% if not loop.last %}<div class="w-0.5 h-8 bg-slate-200 mt-1"></div>{% endif %}
+          </div>
+          <div class="flex-1 pb-1">
+            <div class="rounded-lg {{ row_class }} border {% if badge_class.split()[2] is defined %}{{ badge_class.split()[2] }}{% endif %} px-4 py-3">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold {{ badge_class }} border">{{ name }}</span>
+              </div>
+              <p class="text-xs text-slate-500 leading-relaxed">{{ desc }}</p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Technology Stack -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-800 mb-4">Technology Stack</h2>
+      <div class="space-y-2">
+        {% set stack = [
+          ('Backend',   'Flask 3.x',             'REST API, Jinja2 rendering, HTMX partial routes',               'bg-slate-100 text-slate-700 border-slate-200'),
+          ('Database',  'SQLite + SQLAlchemy',    'Stores customers, campaigns, communications, attribution',       'bg-blue-50 text-blue-700 border-blue-200'),
+          ('AI',        'Gemini 2.5 Flash',       'Generates strategy, campaign content, customer summaries',       'bg-violet-50 text-violet-700 border-violet-200'),
+          ('Frontend',  'HTMX + Alpine.js',       'Partial HTML swaps, reactive UI without a JavaScript framework', 'bg-amber-50 text-amber-700 border-amber-200'),
+          ('Styling',   'Tailwind CSS CDN',        'Utility-first responsive design, consistent token system',       'bg-emerald-50 text-emerald-700 border-emerald-200'),
+          ('Messaging', 'WhatsApp / Email / SMS',  'Simulated multi-channel dispatcher with retry logic',           'bg-indigo-50 text-indigo-700 border-indigo-200'),
+          ('Analytics', 'SQLite aggregation',     'Real-time open rates, click rates, segment metrics via SQL',     'bg-orange-50 text-orange-700 border-orange-200'),
+          ('Callbacks', 'Receipt Webhook API',    'Event ingestion endpoint for delivery, open, click events',      'bg-rose-50 text-rose-700 border-rose-200'),
+        ] %}
+        {% for layer, tech, purpose, cls in stack %}
+        <div class="rounded-lg {{ cls }} border px-3 py-2.5 flex items-start gap-3">
+          <div class="min-w-[80px] shrink-0">
+            <div class="text-xs opacity-60 uppercase tracking-wider font-semibold">{{ layer }}</div>
+            <div class="text-xs font-bold mt-0.5">{{ tech }}</div>
+          </div>
+          <div class="h-full w-px bg-current opacity-10 self-stretch mx-1"></div>
+          <div class="text-xs opacity-75 leading-relaxed">{{ purpose }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: AI Tool Chain | Engineering Decisions -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- AI Tool Chain -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-800 mb-5">AI Tool Chain</h2>
+      <div class="space-y-2">
+        {% for step, fn, desc, color in [
+          ('1', 'analyze_customer_base()',                    'Queries SQLite: segment counts, avg spend, avg order, campaign history → structured base dict.',          'bg-blue-50 border-blue-200 text-blue-800'),
+          ('2', 'select_target_segment(base, goal)',          'Rule-based keyword mapping → audienceTag + size. No Gemini call needed for common patterns.',            'bg-indigo-50 border-indigo-200 text-indigo-800'),
+          ('3', 'choose_best_channel(tag, goal)',             'Selects highest open-rate channel from historical campaign data. Goal overrides for urgency signals.',    'bg-violet-50 border-violet-200 text-violet-800'),
+          ('4', 'generate_message_variants(goal, seg, ch)',   'Gemini 2.5 Flash → 3 message variants: direct / emotional / urgency. Each max 160 chars.',              'bg-rose-50 border-rose-200 text-rose-800'),
+          ('5', 'forecast_revenue(audience, channel, aov)',   'Math: audience × open_rate × click_rate × 0.25 × avg_order. All from live CRM data.',                   'bg-amber-50 border-amber-200 text-amber-800'),
+          ('6', 'generate_final_strategy(goal)',              'Orchestrates tools 1–5. Returns unified strategy dict used by HTMX templates and launch flow.',          'bg-emerald-50 border-emerald-200 text-emerald-800'),
+        ] %}
+        <div class="flex items-start gap-3 rounded-xl border {{ color }} px-4 py-3">
+          <span class="text-xs font-bold opacity-60 mt-0.5 shrink-0 w-4">{{ step }}</span>
+          <div class="flex-1 min-w-0">
+            <code class="text-xs font-semibold font-mono">{{ fn }}</code>
+            <p class="text-xs opacity-75 mt-0.5 leading-relaxed">{{ desc }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="text-xs text-slate-400 mt-4">Each tool is also available as a standalone REST endpoint under <code class="bg-slate-100 px-1.5 py-0.5 rounded">/api/ai/tools/</code></p>
+    </div>
+
+    <!-- Engineering Decisions -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-800 mb-4">Engineering Decisions</h2>
+      <div class="space-y-2">
+        {% set decisions = [
+          ('Why', 'HTMX',   'Server-rendered partials avoid a SPA build step. Enables real-time polling, live stats, and progressive forms with zero JS bundle overhead.',  'bg-amber-50 text-amber-700 border-amber-200'),
+          ('Why', 'SQLite',  'Zero-config relational storage. Schema enforced via SQLAlchemy ORM. Swap to Postgres with a single connection string change.',                'bg-blue-50 text-blue-700 border-blue-200'),
+          ('Why', 'Flask',   'Lightweight WSGI monolith — one process handles API routes, Jinja2 pages, and HTMX partials. Minimal ceremony, fast iteration.',             'bg-violet-50 text-violet-700 border-violet-200'),
+          ('Why', 'Gemini',  'Gemini 2.5 Flash delivers low-latency strategy generation. Tool-calling keeps each AI step independently testable and overrideable.',         'bg-emerald-50 text-emerald-700 border-emerald-200'),
+        ] %}
+        {% for label, tech, reason, cls in decisions %}
+        <div class="rounded-lg {{ cls }} border px-3 py-2.5 flex items-start gap-3">
+          <div class="min-w-[80px] shrink-0">
+            <div class="text-xs opacity-60 uppercase tracking-wider font-semibold">{{ label }}</div>
+            <div class="text-xs font-bold mt-0.5">{{ tech }}</div>
+          </div>
+          <div class="h-full w-px bg-current opacity-10 self-stretch mx-1"></div>
+          <div class="text-xs opacity-75 leading-relaxed">{{ reason }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 3: Scalability Notes (full width) -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+    <h2 class="text-base font-semibold text-slate-800 mb-5">Scalability Notes</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% set scale_items = [
+        ('Storage',    'SQLite',             'PostgreSQL + Redis Queue',    'bg-blue-50 border-blue-200 text-blue-700',    'bg-blue-100 text-blue-800'),
+        ('Workers',    'Background Threads', 'Distributed Workers (Celery)','bg-violet-50 border-violet-200 text-violet-700','bg-violet-100 text-violet-800'),
+        ('Realtime',   'HTTP Polling',       'WebSockets (Socket.IO)',      'bg-amber-50 border-amber-200 text-amber-700', 'bg-amber-100 text-amber-800'),
+        ('Deployment', 'Single Instance',    'Horizontal Scaling',          'bg-emerald-50 border-emerald-200 text-emerald-700','bg-emerald-100 text-emerald-800'),
+      ] %}
+      {% for label, current, future, card_cls, badge_cls in scale_items %}
+      <div class="rounded-xl border {{ card_cls }} p-4">
+        <div class="text-xs font-bold uppercase tracking-wider opacity-60 mb-3">{{ label }}</div>
+        <div class="space-y-2">
+          <div>
+            <div class="text-xs text-slate-400 mb-1">Current</div>
+            <span class="inline-block px-2 py-1 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">{{ current }}</span>
+          </div>
+          <div class="flex items-center gap-1 text-slate-300">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 mb-1">Production-ready</div>
+            <span class="inline-block px-2 py-1 rounded-md {{ badge_cls }} text-xs font-semibold">{{ future }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% set all_duplicates = (imported == 0 and skipped == 0 and duplicates > 0) %}
+{% set success = (imported > 0) %}
+
+{% if success or all_duplicates %}
+<div class="rounded-xl border p-4 space-y-3
+  {% if success %}bg-emerald-50 border-emerald-200{% else %}bg-slate-50 border-slate-200{% endif %}">
+
+  <div class="flex items-center gap-2 text-sm font-semibold
+    {% if success %}text-emerald-700{% else %}text-slate-600{% endif %}">
+    {% if success %}
+    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    Import complete.
+    {% else %}
+    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+    </svg>
+    No new customers added — all rows already exist.
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-3 gap-2">
+    <div class="rounded-lg bg-white border p-2.5 text-center
+      {% if success %}border-emerald-100{% else %}border-slate-100{% endif %}">
+      <div class="text-2xl font-bold {% if success %}text-emerald-700{% else %}text-slate-300{% endif %}">{{ imported }}</div>
+      <div class="text-xs mt-0.5 {% if success %}text-emerald-500{% else %}text-slate-400{% endif %}">Imported</div>
+    </div>
+    <div class="rounded-lg bg-white border border-amber-100 p-2.5 text-center">
+      <div class="text-2xl font-bold {% if duplicates > 0 %}text-amber-500{% else %}text-slate-300{% endif %}">{{ duplicates }}</div>
+      <div class="text-xs text-slate-400 mt-0.5">Duplicates</div>
+    </div>
+    <div class="rounded-lg bg-white border border-slate-100 p-2.5 text-center">
+      <div class="text-2xl font-bold {% if skipped > 0 %}text-red-500{% else %}text-slate-300{% endif %}">{{ skipped }}</div>
+      <div class="text-xs text-slate-400 mt-0.5">Invalid Rows</div>
+    </div>
+  </div>
+
+  {% if row_errors and skipped > 0 %}
+  <details class="mt-1">
+    <summary class="text-xs font-medium text-slate-500 cursor-pointer hover:text-slate-700">
+      {{ skipped }} row{{ 's' if skipped != 1 else '' }} failed validation — click to expand
+    </summary>
+    <div class="mt-2 space-y-1 max-h-40 overflow-y-auto">
+      {% for err in row_errors if err.kind != 'duplicate' %}
+      <div class="flex items-start gap-2 rounded-lg bg-white border border-slate-200 px-3 py-2">
+        <span class="shrink-0 text-xs font-bold px-1.5 py-0.5 rounded
+          {% if err.kind == 'missing_fields' %}bg-red-100 text-red-700
+          {% elif err.kind == 'invalid_date' %}bg-orange-100 text-orange-700
+          {% else %}bg-slate-100 text-slate-600{% endif %}">
+          {% if err.kind == 'missing_fields' %}MISSING
+          {% elif err.kind == 'invalid_date' %}DATE
+          {% elif err.kind == 'invalid_field' %}VALUE
+          {% else %}ERR{% endif %}
+        </span>
+        <div class="min-w-0">
+          <p class="text-xs font-medium text-slate-700">Row {{ err.row }}{% if err.email and err.email != '—' %} — {{ err.email }}{% endif %}</p>
+          <p class="text-xs text-slate-500">{{ err.reason }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="rounded-xl bg-red-50 border border-red-200 p-4 space-y-3">
+  <div class="flex items-center gap-2 text-sm font-semibold text-red-700">
+    <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+    </svg>
+    {% if total_rows == 0 %}
+    No data detected. Check the file format.
+    {% else %}
+    Import failed — {{ total_rows }} row{{ 's' if total_rows != 1 else '' }} could not be processed.
+    {% endif %}
+  </div>
+
+  {% if total_rows == 0 %}
+  <p class="text-xs text-red-600">Ensure your CSV includes these headers:</p>
+  <code class="block text-xs bg-red-100 rounded px-2 py-1.5 text-red-800 font-mono">name, email, phone, city, totalSpend, lastOrderDate</code>
+  {% else %}
+  <div class="grid grid-cols-3 gap-2">
+    <div class="rounded-lg bg-white border border-slate-100 p-2.5 text-center">
+      <div class="text-2xl font-bold text-slate-300">0</div>
+      <div class="text-xs text-slate-400 mt-0.5">Imported</div>
+    </div>
+    <div class="rounded-lg bg-white border border-amber-100 p-2.5 text-center">
+      <div class="text-2xl font-bold {% if duplicates > 0 %}text-amber-500{% else %}text-slate-300{% endif %}">{{ duplicates }}</div>
+      <div class="text-xs text-slate-400 mt-0.5">Duplicates</div>
+    </div>
+    <div class="rounded-lg bg-white border border-red-100 p-2.5 text-center">
+      <div class="text-2xl font-bold text-red-500">{{ skipped }}</div>
+      <div class="text-xs text-slate-400 mt-0.5">Invalid Rows</div>
+    </div>
+  </div>
+  {% if row_errors %}
+  <div class="space-y-1 max-h-40 overflow-y-auto">
+    {% for err in row_errors %}
+    <div class="flex items-start gap-2 rounded-lg bg-white border border-red-100 px-3 py-2">
+      <span class="shrink-0 text-xs font-bold px-1.5 py-0.5 rounded
+        {% if err.kind == 'duplicate' %}bg-amber-100 text-amber-700
+        {% elif err.kind == 'missing_fields' %}bg-red-100 text-red-700
+        {% elif err.kind == 'invalid_date' %}bg-orange-100 text-orange-700
+        {% else %}bg-slate-100 text-slate-600{% endif %}">
+        {% if err.kind == 'duplicate' %}DUP
+        {% elif err.kind == 'missing_fields' %}MISSING
+        {% elif err.kind == 'invalid_date' %}DATE
+        {% elif err.kind == 'invalid_field' %}VALUE
+        {% else %}ERR{% endif %}
+      </span>
+      <div class="min-w-0">
+        <p class="text-xs font-medium text-slate-700">Row {{ err.row }}{% if err.email and err.email != '—' %} — {{ err.email }}{% endif %}</p>
+        <p class="text-xs text-slate-500">{{ err.reason }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+{% block title %}AI Strategist — PulsePilot AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8 max-w-5xl mx-auto w-full space-y-8"
+     x-data="strategist()"
+     x-init="init()">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-950/50 text-purple-400 border border-purple-800/30">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-2xl font-extrabold text-white tracking-tight">AI Strategist</h1>
+      <p class="text-slate-400 text-sm mt-0.5">Let AI build multi-channel engagement strategies or manage individual customer retention.</p>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="flex border-b border-slate-800/80">
+    <button @click="tab = 'strategist'" 
+            :class="tab === 'strategist' ? 'border-purple-500 text-purple-400 font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'" 
+            class="py-3 px-6 border-b-2 text-sm font-semibold transition-all">
+      AI Campaign Strategist
+    </button>
+    <button @click="tab = 'retention'" 
+            :class="tab === 'retention' ? 'border-purple-500 text-purple-400 font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'" 
+            class="py-3 px-6 border-b-2 text-sm font-semibold transition-all flex items-center gap-2">
+      AI Retention Agent
+      <span class="text-[10px] bg-red-950/60 text-red-400 border border-red-800/50 px-1.5 py-0.5 rounded-md font-bold">Action Needed</span>
+    </button>
+  </div>
+
+  <!-- Tab 1: AI Campaign Strategist -->
+  <div x-show="tab === 'strategist'" class="space-y-6">
+    <!-- Input Card -->
+    <div class="glass-card rounded-2xl overflow-hidden">
+      <div class="h-1 bg-gradient-to-r from-brand-purple to-brand-red"></div>
+      <div class="p-6">
+        <form id="strategy-form" @submit.prevent="generateStrategy()" class="space-y-5">
+          <div>
+            <label for="goal" class="block text-sm font-semibold text-slate-300 mb-2">Define your campaign goal</label>
+            <textarea id="goal" name="goal" rows="4"
+              x-model="goal"
+              placeholder="E.g., Re-engage dormant customers who haven't purchased in 90 days with a 20% discount offer..."
+              class="w-full rounded-xl border border-slate-800 bg-[#111827] px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-brand-purple focus:ring-2 focus:ring-purple-900/40 transition resize-none"></textarea>
+          </div>
+
+          <!-- Quick suggestions -->
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs text-slate-500 self-center">Try:</span>
+            <template x-for="s in suggestions" :key="s">
+              <button type="button"
+                @click="goal = s"
+                :class="goal === s ? 'bg-purple-950/40 text-purple-400 border-purple-800/60' : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white'"
+                class="text-xs px-3 py-1.5 rounded-full border transition-colors"
+                x-text="s"></button>
+            </template>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <div x-show="thinking" class="flex items-center gap-2 text-sm text-purple-400">
+              <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span x-text="thinkingLabel">Analyzing database metrics...</span>
+            </div>
+            <div class="flex-1"></div>
+            <button type="submit"
+              :disabled="thinking || !goal.trim()"
+              :class="thinking || !goal.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95'"
+              class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand-red px-5 py-2.5 text-sm font-semibold text-white focus:outline-none transition-all shadow-md shadow-purple-900/10">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+              </svg>
+              Generate Strategy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- AI Reasoning Timeline -->
+    <div x-show="showReasoning" x-cloak class="space-y-3">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="h-px flex-1 bg-slate-800"></div>
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">AI Reasoning Chain</span>
+        <div class="h-px flex-1 bg-slate-800"></div>
+      </div>
+
+      <template x-for="(step, i) in visibleSteps" :key="i">
+        <div class="flex items-start gap-3 p-4 rounded-xl border transition-all duration-500"
+             :class="step.done ? 'bg-slate-900/40 border-slate-800/80' : 'bg-purple-950/20 border-purple-800/50'">
+          <!-- Step icon -->
+          <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+               :class="step.done ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-800/50' : 'bg-purple-950/50 text-purple-400 border border-purple-800/50'">
+            <template x-if="step.done">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </template>
+            <template x-if="!step.done">
+              <span x-html="step.svgIcon"></span>
+            </template>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-slate-200" x-text="step.title"></p>
+            <p class="text-xs text-slate-500 mt-0.5" x-text="step.detail"></p>
+          </div>
+          <div x-show="!step.done" class="flex-shrink-0">
+            <svg class="h-4 w-4 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Result area -->
+    <div id="strategy-result"></div>
+  </div>
+
+  <!-- Tab 2: AI Retention Agent -->
+  <div x-show="tab === 'retention'" class="space-y-6" x-cloak>
+    <!-- Retention overview KPI -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="glass-card rounded-2xl p-5 border border-red-900/40 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent"></div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Dormant Customers</p>
+        <p class="text-3xl font-extrabold text-red-400">{{ dormant_count }}</p>
+        <p class="text-xs text-slate-500 mt-1">Lapsed (>90 days since purchase)</p>
+      </div>
+      <div class="glass-card rounded-2xl p-5 border border-emerald-900/40 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-emerald-600/5 to-transparent"></div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Win-Back Potential</p>
+        <p class="text-3xl font-extrabold text-emerald-400">₹{{ "{:,.0f}".format(recovery_potential) }}</p>
+        <p class="text-xs text-slate-500 mt-1">Est. recovered value @ 30% conversion</p>
+      </div>
+      <div class="glass-card rounded-2xl p-5 border border-purple-900/40 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-transparent"></div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Recommended Strategy</p>
+        <p class="text-lg font-bold text-purple-300">WhatsApp Win-Back</p>
+        <p class="text-xs text-slate-500 mt-1">High open rates reduce dormant window</p>
+      </div>
+    </div>
+
+    <!-- Main Workspace Split -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Dormant Customer List -->
+      <div class="lg:col-span-1 glass-card rounded-2xl overflow-hidden flex flex-col h-[500px]">
+        <div class="p-4 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between shrink-0">
+          <span class="text-sm font-bold text-white">Dormant Cohort</span>
+          <span class="text-xs text-slate-500 font-semibold">{{ dormant_customers | length }} found</span>
+        </div>
+        <div class="flex-1 overflow-y-auto divide-y divide-slate-800/60">
+          {% if dormant_customers %}
+            {% for c in dormant_customers %}
+            <div @click="selectCustomer('{{ c.id }}', '{{ c.name }}', '{{ c.city }}', '₹{{ '{:,.0f}'.format(c.total_spend) }}', '{{ c.last_order_date }}')"
+                 :class="selectedId == '{{ c.id }}' ? 'bg-purple-950/30 border-l-4 border-purple-500' : 'hover:bg-slate-900/40'"
+                 class="p-4 cursor-pointer transition-all flex flex-col gap-1.5 border-l-4 border-transparent">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white">{{ c.name }}</span>
+                <span class="text-[10px] text-slate-500 font-mono">{{ c.city }}</span>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-400">
+                <span>Spend: ₹{{ "{:,.0f}".format(c.total_spend) }}</span>
+                <span class="text-[10px] text-red-400">Last order: {{ c.last_order_date }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="p-8 text-center text-slate-500 text-xs">No dormant customers detected. Excellent segment retention!</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Personalized Outreach Panel -->
+      <div class="lg:col-span-2 glass-card rounded-2xl p-6 flex flex-col justify-between h-[500px]">
+        <div class="space-y-4">
+          <div class="border-b border-slate-800/80 pb-4">
+            <h3 class="text-sm font-bold text-white">Outreach Workspace</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Generate tailored messages for selected lapsed customers.</p>
+          </div>
+
+          <!-- Selection details template -->
+          <div x-show="selectedId" class="space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-900/50 border border-slate-800 rounded-xl p-3.5">
+              <div>
+                <span class="text-[10px] text-slate-500 font-semibold uppercase">Customer</span>
+                <p class="text-xs font-bold text-white" x-text="selectedName"></p>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 font-semibold uppercase">Location</span>
+                <p class="text-xs font-bold text-white" x-text="selectedCity"></p>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 font-semibold uppercase">LTV Spend</span>
+                <p class="text-xs font-bold text-emerald-400" x-text="selectedSpend"></p>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 font-semibold uppercase">Last Order</span>
+                <p class="text-xs font-bold text-red-400" x-text="selectedDate"></p>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-purple-950/20 to-red-950/10 border border-purple-900/30 rounded-xl p-4">
+              <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">AI Recommendation Strategy</span>
+              <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                Target via <span class="font-bold text-white">WhatsApp</span>. Include an exclusive <strong>20% discount offer</strong> to decrease churn window and drive immediate conversion.
+              </p>
+            </div>
+
+            <!-- Generate button -->
+            <form hx-post="/htmx/retention/outreach"
+                  hx-target="#personalized-outreach-result"
+                  hx-swap="innerHTML"
+                  hx-indicator="#outreach-loading">
+              <input type="hidden" name="customer_id" :value="selectedId">
+              
+              <div class="flex items-center justify-between">
+                <button type="submit"
+                        class="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-brand-purple to-brand-red px-4 py-2.5 text-xs font-bold text-white shadow-md">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  Generate Personalized Outreach
+                </button>
+
+                <div id="outreach-loading" class="htmx-indicator flex items-center gap-2 text-xs text-purple-400">
+                  <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Personalizing outreach...
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Empty state -->
+          <div x-show="!selectedId" class="flex flex-col items-center justify-center py-20 text-center space-y-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-500">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </div>
+            <p class="text-xs text-slate-400 font-semibold">Select a customer from the cohort</p>
+            <p class="text-[11px] text-slate-500 max-w-xs">Select any dormant customer on the left to start generating customized campaigns.</p>
+          </div>
+        </div>
+
+        <!-- Generated copy placeholder -->
+        <form hx-post="/htmx/ai/launch"
+              hx-target="body"
+              hx-swap="none"
+              class="shrink-0 mt-4">
+          <!-- Launch inputs matching base Strategist launch -->
+          <input type="hidden" name="goal" value="AI Retention Agent win-back outreach">
+          <input type="hidden" name="audience" :value="selectedName">
+          <input type="hidden" name="channel" value="WhatsApp">
+          <input type="hidden" name="audienceTag" value="Dormant">
+          <input type="hidden" name="offer" value="20% off next order">
+
+          <div id="personalized-outreach-result"></div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STEP_ICONS = {
+  intelligence: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>`,
+  database: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /></svg>`,
+  analytics: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>`,
+  audience: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>`,
+  message: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>`,
+  strategy: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>`,
+};
+
+function strategist() {
+  return {
+    tab: 'strategist',
+    goal: '',
+    thinking: false,
+    thinkingLabel: 'Analyzing customer data...',
+    showReasoning: false,
+    visibleSteps: [],
+    suggestions: [
+      'Re-engage dormant customers with a win-back offer',
+      'Reward loyal customers with an exclusive loyalty campaign',
+      'Find customers at risk of churning and retain them',
+      'Target high-value customers with a premium offer'
+    ],
+    crmData: null,
+
+    // Selected dormant customer fields
+    selectedId: null,
+    selectedName: '',
+    selectedCity: '',
+    selectedSpend: '',
+    selectedDate: '',
+
+    init() {
+      fetch('/htmx/ai/reasoning-data')
+        .then(r => r.json())
+        .then(d => { this.crmData = d; })
+        .catch(() => {});
+
+      const urlGoal = new URLSearchParams(window.location.search).get('goal');
+      if (urlGoal && urlGoal.trim()) {
+        this.goal = urlGoal.trim();
+        this.$nextTick(() => this.generateStrategy());
+      }
+    },
+
+    selectCustomer(id, name, city, spend, date) {
+      this.selectedId = id;
+      this.selectedName = name;
+      this.selectedCity = city;
+      this.selectedSpend = spend;
+      this.selectedDate = date;
+      document.getElementById('personalized-outreach-result').innerHTML = '';
+    },
+
+    buildSteps() {
+      const d = this.crmData || {};
+      const dormant = d.dormantCount || '...';
+      const campaigns = d.campaignCount || '...';
+      const bestCh = d.bestChannel || 'WhatsApp';
+      const openRate = d.bestChannelOpenRate || 70;
+      const potRev = d.potentialRevenue ? `₹${Number(d.potentialRevenue).toLocaleString('en-IN')}` : '...';
+      const total = d.totalCustomers || '...';
+
+      return [
+        { svgIcon: STEP_ICONS.intelligence, title: 'Analyzing customer database...', detail: `Found ${total} customers — ${dormant} dormant, ${d.atRiskCount || '...'} at-risk`, done: false },
+        { svgIcon: STEP_ICONS.database,     title: 'Reviewing campaign history...', detail: `${campaigns} recent campaigns analyzed — ${bestCh} has highest engagement (${openRate}% open rate)`, done: false },
+        { svgIcon: STEP_ICONS.analytics,    title: 'Estimating opportunity...', detail: `Potential recoverable revenue ${potRev} from dormant segment`, done: false },
+        { svgIcon: STEP_ICONS.audience,     title: 'Selecting audience...', detail: `Best segment identified based on goal and recency data`, done: false },
+        { svgIcon: STEP_ICONS.message,      title: 'Generating campaign content...', detail: 'Personalized message and offer being crafted by Gemini AI', done: false },
+        { svgIcon: STEP_ICONS.strategy,     title: 'Strategy complete', detail: 'AI has finished reasoning — results ready below', done: false },
+      ];
+    },
+
+    async generateStrategy() {
+      const goalVal = this.goal.trim();
+      if (!goalVal) return;
+
+      this.thinking = true;
+      this.showReasoning = true;
+      document.getElementById('strategy-result').innerHTML = '';
+
+      const steps = this.buildSteps();
+      this.visibleSteps = [];
+
+      const htmxPromise = fetch('/htmx/ai/strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ goal: goalVal })
+      }).then(r => r.text());
+
+      for (let i = 0; i < steps.length - 1; i++) {
+        await new Promise(r => setTimeout(r, i === 0 ? 0 : 700));
+        this.visibleSteps = [...steps.slice(0, i + 1)];
+        this.thinkingLabel = steps[i].title;
+        if (i > 0) {
+          const updated = [...this.visibleSteps];
+          updated[i - 1] = { ...updated[i - 1], done: true };
+          this.visibleSteps = updated;
+        }
+      }
+
+      const html = await htmxPromise;
+
+      const updated = [...this.visibleSteps];
+      for (let i = 0; i < updated.length; i++) { updated[i] = { ...updated[i], done: true }; }
+      this.visibleSteps = updated;
+      steps[steps.length - 1].done = true;
+      this.visibleSteps = [...updated, { ...steps[steps.length - 1], done: true }];
+
+      await new Promise(r => setTimeout(r, 400));
+
+      document.getElementById('strategy-result').innerHTML = html;
+      htmx.process(document.getElementById('strategy-result'));
+
+      this.thinking = false;
+      this.thinkingLabel = 'Analyzing your customer data...';
+
+      document.getElementById('strategy-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+}
+</script>
+{% endblock %}
